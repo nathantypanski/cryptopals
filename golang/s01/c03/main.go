@@ -28,7 +28,7 @@ func xor(b1 []byte, b2 []byte) (string, error) {
 
 // https://crypto.stackexchange.com/questions/30209/developing-algorithm-for-detecting-plain-text-via-frequency-analysis
 //
-// chi squared -> https://en.wikipedia.org/wiki/Chi-squared_test
+// chi squared
 func score(input string) float64 {
 	freq := []float64{
 		0.08167, 0.01492, 0.02782, 0.04253, 0.12702, 0.02228, 0.02015, // A-G

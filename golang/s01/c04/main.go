@@ -118,8 +118,37 @@ func findBestXor(input []byte) (rune, string, error) {
 	return c, decoded, nil
 }
 
+func findBestString(inputs [][]byte) (rune, string, string, error) {
+	if len(inputs) == 0 {
+		return rune(0), "", "", fmt.Errorf("no input strings\n")
+	}
+
+	c, decoded, err := findBestXor(inputs[0])
+	if err != nil {
+		return rune(0), "", "", fmt.Errorf("Error finding best XOR: %v\n", err)
+	}
+
+	bestLine := inputs[0]
+	bestScore := score(decoded)
+	for _, s := range inputs {
+		if proposedC, proposedDecoded, err := findBestXor(s); err == nil {
+			proposedLine := s
+			proposedScore := score(proposedDecoded)
+			if proposedScore < bestScore && proposedScore != -1 || bestScore == -1 {
+				c = proposedC
+				decoded = proposedDecoded
+				bestLine = proposedLine
+				bestScore = proposedScore
+			}
+		} else if err != nil {
+			return rune(0), "", "", fmt.Errorf("Error scoring best XOR: %v\n", err)
+		}
+	}
+	return c, decoded, string(bestLine), nil
+}
+
 func main() {
-	var lines []string = []string{}
+	var lines [][]byte = [][]byte{}
 	f, err := os.Open("input.txt")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
@@ -132,7 +161,12 @@ func main() {
 
 	// Iterate over each line in the file
 	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+		decoded, err := hex.DecodeString(scanner.Text())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error decoding string: %v\n", err)
+			os.Exit(1)
+		}
+		lines = append(lines, decoded)
 	}
 
 	// Check for errors during the scan
@@ -141,17 +175,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	for i, line := range(lines) {
-		input, err := hex.DecodeString(h)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
-		}
-		c, s, err := findBestXor(input)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("xor with '%v' results in '%v'\n", string(c), s)
+	c, decoded, bestLine, err := findBestString(lines)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error finding best: %v\n", err)
+		os.Exit(1)
 	}
+	fmt.Printf("%v (repeated) ^ %v = %v\n", string(c), bestLine, decoded)
 }
